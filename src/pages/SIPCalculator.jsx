@@ -64,11 +64,11 @@ const SIPCalculator = () => {
         <DonutChart invested={invested} returns={returns} total={total} />
 
         <div className="mt-4  text-sm space-y-2 text-gray-300">
-          <p>Invested Amount : ₹{invested}</p>
-          <p>Est. Returns :₹{returns}</p>
+          <p>Invested Amount : ₹{invested.toLocaleString("en-IN")}</p>
+          <p>Est. Returns :₹{returns.toLocaleString("en-IN")}</p>
 
           <p className="text-green-400 font-bold text-lg">
-            Total Value :{total}
+            Total Value : ₹{total.toLocaleString("en-IN")}
           </p>
         </div>
       </div>
