@@ -1,109 +1,133 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import RangeInput from "../components/RangeInput";
 import DonutChart from "../components/DonutChart";
 
+//  Currency formatter
+const formatINR = (num) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(num || 0);
+
 const FutureValue = () => {
   const [currentValue, setCurrentValue] = useState(5000);
-  const [rate, setRate] = useState(6); // inflation default
+  const [rate, setRate] = useState(6);
   const [time, setTime] = useState(10);
 
-  const calculate = () => {
-    if (!currentValue || !rate || !time)
+  //  calculation
+  const { invested, returns, total } = useMemo(() => {
+    if (currentValue <= 0 || time <= 0) {
       return { invested: 0, returns: 0, total: 0 };
-
-    const r = rate / 100;
-
-    if (r === 0) {
-      return {
-        invested: currentValue,
-        returns: 0,
-        total: currentValue,
-      };
     }
 
-    const futureValue = currentValue * Math.pow(1 + r, time);
-    const invested = currentValue;
-    const returns = futureValue - invested;
+    const inflationRate = rate / 100;
+
+    let futureValue = 0;
+
+    // edge case
+    if (inflationRate === 0) {
+      futureValue = currentValue;
+    } else {
+      futureValue =
+        currentValue * Math.pow(1 + inflationRate, time);
+    }
+
+    const increase = futureValue - currentValue;
 
     return {
-      invested: Math.round(invested),
-      returns: Math.round(returns),
+      invested: Math.round(currentValue),
+      returns: Math.round(increase),
       total: Math.round(futureValue),
     };
-  };
-
-  const { invested, returns, total } = calculate();
+  }, [currentValue, rate, time]);
 
   return (
-    <div className="grid md:grid-cols-2 gap-6 mt-6">
+  <div className="grid md:grid-cols-2 gap-4 h-full min-h-0">
 
-      {/* LEFT PANEL */}
-      <div className="bg-[#0b1220] border border-gray-800 p-6 rounded-2xl space-y-6">
+    {/* LEFT PANEL */}
+    <div className="bg-[#0b1220] border border-gray-800 p-4 rounded-xl space-y-3 shadow-lg min-h-0">
 
-        <RangeInput
-          label="Current Price"
-          value={currentValue}
-          setValue={setCurrentValue}
-          min={500}
-          max={100000}
-          step={500}
-          suffix="₹"
+      <RangeInput
+        label="Current Price"
+        value={currentValue}
+        setValue={setCurrentValue}
+        min={500}
+        max={100000000}
+        step={500}
+        suffix="₹"
+      />
+
+      <RangeInput
+        label="Inflation"
+        value={rate}
+        setValue={setRate}
+        min={0}
+        max={12}
+        step={0.1}
+        suffix="%"
+      />
+
+      <RangeInput
+        label="Time"
+        value={time}
+        setValue={setTime}
+        min={1}
+        max={30}
+        step={1}
+        suffix="Years"
+      />
+
+    </div>
+
+    {/* RIGHT PANEL */}
+    <div className="bg-[#0b1220] border border-gray-800 p-4 rounded-xl flex flex-col justify-between items-center shadow-lg min-h-0">
+
+      {/* CHART */}
+      <div className="scale-90">
+        <DonutChart
+          invested={invested}
+          returns={returns}
+          total={total}
         />
-
-        <RangeInput
-          label="Inflation Rate (p.a)"
-          value={rate}
-          setValue={setRate}
-          min={1}
-          max={12}
-          step={0.1}
-          suffix="%"
-        />
-
-        <RangeInput
-          label="Time Period"
-          value={time}
-          setValue={setTime}
-          min={1}
-          max={30}
-          step={1}
-          suffix=" yrs"
-        />
-
       </div>
 
-      {/* RIGHT PANEL */}
-      <div className="bg-[#0b1220] border border-gray-800 p-6 rounded-2xl flex flex-col items-center justify-center">
+      {/* SUMMARY */}
+      <div className="grid grid-cols-3 gap-2 w-full text-xs text-center">
 
-        <DonutChart invested={invested} returns={returns} />
-
-        <div className="mt-4 text-sm space-y-2 text-gray-300">
-
-          <p>
-            Current Price: ₹{invested.toLocaleString("en-IN")}
+        <div className="bg-gray-900 p-2 rounded-lg">
+          <p className="text-gray-400">Current</p>
+          <p className="text-white font-semibold">
+            {formatINR(invested)}
           </p>
+        </div>
 
-          <p>
-            Price Increase:{" "}
-            <span className="text-red-400">
-              ₹{returns.toLocaleString("en-IN")}
-            </span>
+        <div className="bg-gray-900 p-2 rounded-lg">
+          <p className="text-gray-400">Increase</p>
+          <p className="text-red-400 font-semibold">
+            {formatINR(returns)}
           </p>
+        </div>
 
-          <p className="text-green-400 font-bold text-lg">
-            Future Price: ₹{total.toLocaleString("en-IN")}
+        <div className="bg-gray-900 p-2 rounded-lg">
+          <p className="text-gray-400">Future</p>
+          <p className="text-green-400 font-bold">
+            {formatINR(total)}
           </p>
-
-          <p className="text-xs text-yellow-400 mt-2">
-            Estimated future cost considering inflation
-          </p>
-
         </div>
 
       </div>
 
+      {/* FOOTER */}
+      <p className="text-[10px] text-yellow-400 text-center">
+        Inflation raises future cost
+      </p>
+
     </div>
-  );
+
+  </div>
+);
+
 };
 
 export default FutureValue;

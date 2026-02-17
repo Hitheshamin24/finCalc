@@ -1,85 +1,143 @@
-import { useState } from "react";
-import SliderInput from "../components/SliderInput";
-import DonutChart from "../components/DonutChart";
+import { useState, useMemo } from "react";
 import RangeInput from "../components/RangeInput";
+import DonutChart from "../components/DonutChart";
+
+//  Currency formatter
+const formatINR = (num) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(num || 0);
 
 const EMI = () => {
-  const [principal, setPrincipal] = useState(10000);
+  const [principal, setPrincipal] = useState(100000);
   const [rate, setRate] = useState(12);
   const [time, setTime] = useState(10);
 
-  const calculate = () => {
-    const r = rate / 100 / 12;
-    const n = time * 12;
-    if (r == 0) {
-      const emi = principal / n;
-      return {
-        emi: Math.round(emi),
-        total: Math.round(principal),
-        totalInterest: 0,
-      };
+  //   calculation
+  const { emi, total, totalInterest } = useMemo(() => {
+    if (principal <= 0 || time <= 0) {
+      return { emi: 0, total: 0, totalInterest: 0 };
     }
-    const emi=(principal * r * Math.pow(1+r,n))/(Math.pow(1+r,n)-1)
-    const total = emi * n;
-    const totalInterest = total - principal;
 
-    
+    const monthlyRate = rate / 100 / 12;
+    const months = time * 12;
+
+    let emiValue = 0;
+
+    if (monthlyRate === 0) {
+      emiValue = principal / months;
+    } else {
+      emiValue =
+        (principal * monthlyRate * Math.pow(1 + monthlyRate, months)) /
+        (Math.pow(1 + monthlyRate, months) - 1);
+    }
+
+    const totalPayment = emiValue * months;
+    const interest = totalPayment - principal;
 
     return {
-      emi: Math.round(emi),
-      total: Math.round(total),
-      totalInterest: Math.round(totalInterest),
+      emi: Math.round(emiValue),
+      total: Math.round(totalPayment),
+      totalInterest: Math.round(interest),
     };
-  };
-  const { emi, total, totalInterest } = calculate();
-  return (
-    <div className="grid md:grid-cols-2 gap-6 mt-6">
-      {/* left panel */}
-      <div className="bg-[#0b1220] border border-gray-800 p-6 rounded-2xl space-y-6">
-        <RangeInput
-          label="Loan Amount"
-          value={principal}
-          setValue={setPrincipal}
-          min={10000}
-          max={10000000}
-          step={500}
-          suffix="₹"
-        />
-        <RangeInput
-          label="Interest Rate (p.a)"
-          value={rate}
-          setValue={setRate}
-          min={1}
-          max={30}
-          step={0.1}
-          suffix="%"
-        />
-        <RangeInput
-          label="Time Period (Years)"
-          value={time}
-          setValue={setTime}
-          min={1}
-          max={30}
-          step={1}
-          suffix="Years"
+  }, [principal, rate, time]);
+
+return (
+  <div className="grid md:grid-cols-2 gap-4 h-full min-h-0">
+
+    {/* LEFT PANEL */}
+    <div className="bg-[#0b1220] border border-gray-800 p-4 rounded-xl space-y-3 shadow-lg min-h-0">
+
+      <RangeInput
+        label="Loan Amount"
+        value={principal}
+        setValue={setPrincipal}
+        min={10000}
+        max={10000000}
+        step={500}
+        suffix="₹"
+      />
+
+      <RangeInput
+        label="Interest Rate (%)"
+        value={rate}
+        setValue={setRate}
+        min={0}
+        max={30}
+        step={0.1}
+        suffix="%"
+      />
+
+      <RangeInput
+        label="Tenure"
+        value={time}
+        setValue={setTime}
+        min={1}
+        max={30}
+        step={1}
+        suffix="Years"
+      />
+
+    </div>
+
+    {/* RIGHT PANEL */}
+    <div className="bg-[#0b1220] border border-gray-800 p-4 rounded-xl flex flex-col justify-between items-center shadow-lg min-h-0">
+
+      {/* CHART */}
+      <div className="scale-90">
+        <DonutChart
+          invested={principal}
+          returns={totalInterest}
+          total={total}
         />
       </div>
 
-      {/* Right Panel */}
-      <div className="bg-[#0b1220] border border-gray-800 p-6 rounded-2xl flex flex-col items-center justify-center">
-        <DonutChart invested={principal} returns={totalInterest} total={total} />
+      {/* EMI */}
+      <div className="text-center">
+        <p className="text-xs text-gray-400">EMI</p>
+        <p className="text-lg font-bold text-green-400">
+          {formatINR(emi)}
+        </p>
+      </div>
 
-        <div className="mt-4  text-sm space-y-2 text-gray-300">
-          <p className="text-lg font-semibold text-green-400">Monthly EMI : ₹{emi.toLocaleString("en-IN")}</p>
-          <p>Total Interest :₹{totalInterest.toLocaleString("en-IN")}</p>
+      {/* SUMMARY */}
+      <div className="grid grid-cols-3 gap-2 w-full text-xs text-center">
 
-          <p >
-            Total payment : ₹{total.toLocaleString("en-IN")}
+        <div className="bg-gray-900 p-2 rounded-lg">
+          <p className="text-gray-400">Principal</p>
+          <p className="text-white font-semibold">
+            {formatINR(principal)}
           </p>
         </div>
+
+        <div className="bg-gray-900 p-2 rounded-lg">
+          <p className="text-gray-400">Interest</p>
+          <p className="text-blue-400 font-semibold">
+            {formatINR(totalInterest)}
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-2 rounded-lg">
+          <p className="text-gray-400">Total</p>
+          <p className="text-green-400 font-bold">
+            {formatINR(total)}
+          </p>
+        </div>
+
       </div>
+
+      {/* FOOTER */}
+      <p className="text-[10px] text-gray-400 text-center">
+        {time} yrs • {rate}%
+      </p>
+
     </div>
-  );
+
+  </div>
+);
+
 };
 
 export default EMI;

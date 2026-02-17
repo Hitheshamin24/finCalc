@@ -1,86 +1,155 @@
-import { useState } from "react";
-import SliderInput from "../components/SliderInput";
-import DonutChart from "../components/DonutChart";
+import { useState, useMemo } from "react";
 import RangeInput from "../components/RangeInput";
+import DonutChart from "../components/DonutChart";
+
+//  Currency formatter
+const formatINR = (num) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(num || 0);
 
 const LumpSum = () => {
   const [principal, setPrincipal] = useState(5000);
   const [rate, setRate] = useState(12);
   const [time, setTime] = useState(10);
 
-  const calculate = () => {
-    if (!principal || !rate || !time)
+  // calculation
+  const { invested, returns, total } = useMemo(() => {
+    if (principal <= 0 || rate < 0 || time <= 0) {
       return { invested: 0, returns: 0, total: 0 };
-
-    
-    const r = rate / 100 ;
-    if(r==0){
-        return {
-            invested: principal,  
-            returns: 0,
-            total: principal  
-        }
     }
 
-    const futureValue = principal * Math.pow(1 + r, time);
-    const invested = principal ;
-    const returns = futureValue - invested;
+    const annualRate = rate / 100;
+
+    let futureValue = 0;
+
+    if (annualRate === 0) {
+      futureValue = principal;
+    } else {
+      futureValue = principal * Math.pow(1 + annualRate, time);
+    }
+
+    const investedAmount = principal;
+    const returnsAmount = futureValue - investedAmount;
 
     return {
-      invested: Math.round(invested),
-      returns: Math.round(returns),
+      invested: Math.round(investedAmount),
+      returns: Math.round(returnsAmount),
       total: Math.round(futureValue),
     };
-  };
-  const { invested, returns, total } = calculate();
-  return (
-    <div className="grid md:grid-cols-2 gap-6 mt-6">
-      {/* left panel */}
-      <div className="bg-[#0b1220] border border-gray-800 p-6 rounded-2xl space-y-6">
-        <RangeInput
-          label="Total  investment"
-          value={principal}
-          setValue={setPrincipal}
-          min={500}
-          max={100000}
-          step={500}
-          suffix="₹"
-        />
-        <RangeInput
-          label="Expected Return (p.a)"
-          value={rate}
-          setValue={setRate}
-          min={1}
-          max={30}
-          step={0.5}
-          suffix="%"
-        />
-        <RangeInput
-          label="Time Period (Years)"
-          value={time}
-          setValue={setTime}
-          min={1}
-          max={30}
-          step={1}
-          suffix="Years"
-        />
-      </div>
+  }, [principal, rate, time]);
 
-      {/* Right Panel */}
-      <div className="bg-[#0b1220] border border-gray-800 p-6 rounded-2xl flex flex-col items-center justify-center">
-        <DonutChart invested={invested} returns={returns} total={total} />
+ return (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 sm:mt-6">
 
-        <div className="mt-4  text-sm space-y-2 text-gray-300">
-          <p>Invested Amount : ₹{invested.toLocaleString("en-IN")}</p>
-          <p>Est. Returns :₹{returns.toLocaleString("en-IN")}</p>
+    {/* LEFT PANEL */}
+    <div className="
+      bg-[#0b1220]
+      border border-gray-800
+      p-3 sm:p-4
+      rounded-xl
+      space-y-3 sm:space-y-4
+      shadow-lg
+    ">
 
-          <p className="text-green-400 font-bold text-lg">
-            Total Value : ₹{total.toLocaleString("en-IN")}
-          </p>
+      <RangeInput
+        label="Total Investment"
+        value={principal}
+        setValue={setPrincipal}
+        min={500}
+        max={100000}
+        step={500}
+        suffix="₹"
+      />
+
+      <RangeInput
+        label="Expected Return (%)"
+        value={rate}
+        setValue={setRate}
+        min={0}
+        max={30}
+        step={0.5}
+        suffix="%"
+      />
+
+      <RangeInput
+        label="Time Period"
+        value={time}
+        setValue={setTime}
+        min={1}
+        max={30}
+        step={1}
+        suffix="Years"
+      />
+
+    </div>
+
+    {/* RIGHT PANEL */}
+    <div className="
+      bg-[#0b1220]
+      border border-gray-800
+      p-3 sm:p-4
+      rounded-xl
+      flex flex-col items-center
+      shadow-lg
+    ">
+
+      {/* CHART */}
+      <div className="w-full flex justify-center">
+        <div className="scale-90 sm:scale-100">
+          <DonutChart 
+            invested={invested} 
+            returns={returns} 
+            total={total} 
+          />
         </div>
       </div>
+
+      {/* SUMMARY CARDS */}
+      <div className="
+        grid 
+        grid-cols-1 sm:grid-cols-3 
+        gap-3 
+        mt-4 sm:mt-6 
+        w-full 
+        text-xs sm:text-sm
+      ">
+
+        <div className="bg-gray-900 p-3 sm:p-4 rounded-xl text-center">
+          <p className="text-gray-400">Invested</p>
+          <p className="text-white font-semibold">
+            {formatINR(invested)}
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-3 sm:p-4 rounded-xl text-center">
+          <p className="text-gray-400">Returns</p>
+          <p className="text-blue-400 font-semibold">
+            {formatINR(returns)}
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-3 sm:p-4 rounded-xl text-center">
+          <p className="text-gray-400">Total</p>
+          <p className="text-green-400 font-bold">
+            {formatINR(total)}
+          </p>
+        </div>
+
+      </div>
+
+      {/* EXTRA INFO */}
+      <div className="mt-3 sm:mt-4 text-[10px] sm:text-xs text-gray-400 text-center">
+        {formatINR(principal)} grows at {rate}% for {time} yrs
+      </div>
+
     </div>
-  );
+
+  </div>
+);
+
 };
 
 export default LumpSum;
