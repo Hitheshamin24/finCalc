@@ -31,14 +31,30 @@ const App = () => {
   ">
 
     {/* NAVBAR */}
-    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-      <div className="bg-green-500 p-1.5 sm:p-2 rounded-lg text-black font-bold">
-        ↗
-      </div>
-      <h1 className="text-base sm:text-lg font-semibold">
-        FinCalc
-      </h1>
+{/* NAVBAR */}
+<div className="flex items-center justify-between mb-4 sm:mb-6">
+
+  {/* LEFT: LOGO + NAME */}
+  <div className="flex items-center gap-2 sm:gap-3">
+
+    {/* LOGO */}
+    <div className="w-8 h-8 sm:w-10 sm:h-10">
+      <img
+        src="/finlytics.png"
+        alt="FinLytics Logo"
+        className="w-full h-full object-contain"
+      />
     </div>
+
+    {/* BRAND NAME */}
+    <h1 className="text-base sm:text-lg md:text-xl font-semibold tracking-wide">
+      Fin<span className="text-green-400">Lytics</span>
+    </h1>
+
+  </div>
+
+</div>
+
 
     {/* HEADER */}
     <div className="mb-4 sm:mb-6">
